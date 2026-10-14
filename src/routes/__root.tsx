@@ -82,15 +82,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "دیدبان | پایش اینستاگرام" },
       { name: "description", content: "سامانه فارسی پایش حساب‌های اینستاگرام" },
-      
+
       { property: "og:title", content: "دیدبان | پایش اینستاگرام" },
       { property: "og:description", content: "سامانه فارسی پایش حساب‌های اینستاگرام" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      
     ],
     links: [
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -124,7 +126,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <DemoProvider><DashboardShell><Outlet /></DashboardShell></DemoProvider> breaks all child routes. */}
-      <DemoProvider><DashboardShell><Outlet /></DashboardShell></DemoProvider>
+      <DemoProvider>
+        <DashboardShell>
+          <Outlet />
+        </DashboardShell>
+      </DemoProvider>
     </QueryClientProvider>
   );
 }

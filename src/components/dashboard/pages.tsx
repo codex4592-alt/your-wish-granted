@@ -1,19 +1,682 @@
-import {Link,useNavigate} from '@tanstack/react-router';
-import {useState} from 'react';
-import {Plus,Download,CalendarDays,RefreshCw,ChevronLeft,SlidersHorizontal,LayoutGrid,List,Search,Check,Trash2,FileSpreadsheet,TrendingUp} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Switch} from '@/components/ui/switch';
-import {useDemo} from './store';
-import {fa,posts} from './data';
-import {Stats,GrowthChart,ContentChart,AccountTable,PostsGrid,AlertsList,Avatar} from './widgets';
-function exportReport(){const lines=[['داده‌های نمایشی - گزارش دیدبان'],['حساب','نوع محتوا','کپشن','لایک','دیدگاه'],...posts.map(p=>[p.account,p.label,p.caption,p.likes,p.comments])];const csv='\uFEFF'+lines.map(r=>r.map(x=>'"'+String(x).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const link=document.createElement('a');link.href=url;link.download='didban-demo-report.csv';link.click();URL.revokeObjectURL(url);}
-function Heading({title,description,add=false,report=false}:{title:string;description:string;add?:boolean;report?:boolean}){const {setAddOpen}=useDemo();return <div className="page-heading"><div><h1>{title}</h1><p>{description}</p></div><div className="heading-actions">{report&&<Button variant="outline" onClick={exportReport}><Download/>دریافت گزارش</Button>}{add&&<Button onClick={()=>setAddOpen(true)}><Plus/>افزودن حساب جدید</Button>}</div></div>;}
-function QuickFilters(){const [group,setGroup]=useState('all');const [period,setPeriod]=useState('week');const [refresh,setRefresh]=useState(false);return <div className="filter-bar"><SlidersHorizontal size={16} className="text-muted-foreground"/><span className="text-xs text-muted-foreground">فیلتر سریع:</span><select className="select-control" aria-label="گروه حساب‌ها" value={group} onChange={e=>setGroup(e.target.value)}><option value="all">همه حساب‌ها</option><option>خبری</option><option>فرهنگی</option><option>اقتصادی</option></select><select className="select-control" aria-label="بازه زمانی" value={period} onChange={e=>setPeriod(e.target.value)}><option value="week">۷ روز گذشته</option><option value="day">۲۴ ساعت گذشته</option><option value="month">۳۰ روز گذشته</option></select><span className="update"><span className="status-dot"/>{refresh?'پیش‌نمایش به‌روز شد':'آخرین به‌روزرسانی نمونه: ۲ دقیقه پیش'}<Button variant="ghost" size="icon" className="h-6 w-6" title="به‌روزرسانی پیش‌نمایش" onClick={()=>setRefresh(true)}><RefreshCw size={12}/></Button></span></div>;}
-export function Overview(){const {setAddOpen}=useDemo();return <><Heading title="نمای کلی" description="نمایی یکپارچه از فعالیت حساب‌های اینستاگرام شما" add report/><QuickFilters/><Stats/><div className="chart-grid"><GrowthChart/><ContentChart/></div><section className="panel"><div className="panel-header"><div className="flex items-center gap-2"><h2>حساب‌های تحت پایش</h2><span className="text-[10px] text-muted-foreground">۵ حساب نمونه</span></div><Button variant="link" size="sm" asChild><Link to="/accounts">مشاهده همه حساب‌ها<ChevronLeft/></Link></Button></div><AccountTable limit={5}/></section><div className="bottom-grid"><section className="panel"><div className="panel-header"><h2>آخرین پست‌ها و استوری‌ها</h2><Button variant="link" size="sm" asChild><Link to="/content">مشاهده همه<ChevronLeft/></Link></Button></div><div className="panel-body"><PostsGrid/></div></section><section className="panel"><div className="panel-header"><h2>هشدارهای اخیر</h2><Button variant="link" size="sm" asChild><Link to="/alerts">مشاهده همه<ChevronLeft/></Link></Button></div><div className="panel-body"><AlertsList/></div></section></div></>;}
-export function AccountsPage(){const {search,setSearch,accounts}=useDemo();const [group,setGroup]=useState('all');const [status,setStatus]=useState('all');const [sort,setSort]=useState('followers');return <><Heading title="حساب‌های تحت پایش" description={`${fa(accounts.length)} حساب در فضای کاری نمایشی شما`} add/><div className="filter-bar"><input className="field max-w-72" placeholder="جست‌وجوی نام حساب..." aria-label="جست‌وجوی حساب" value={search} onChange={e=>setSearch(e.target.value)}/><select className="select-control" aria-label="فیلتر گروه" value={group} onChange={e=>setGroup(e.target.value)}><option value="all">همه گروه‌ها</option>{['خبری','فرهنگی','اقتصادی','گردشگری','سایر'].map(g=><option key={g}>{g}</option>)}</select><select className="select-control" aria-label="فیلتر وضعیت" value={status} onChange={e=>setStatus(e.target.value)}><option value="all">همه وضعیت‌ها</option><option value="active">فعال</option><option value="paused">متوقف</option><option value="error">خطای دریافت</option></select><select className="select-control" aria-label="مرتب‌سازی" value={sort} onChange={e=>setSort(e.target.value)}><option value="followers">بیشترین دنبال‌کننده</option><option value="growth">بیشترین رشد</option><option value="activity">بیشترین فعالیت</option></select></div><section className="panel"><AccountTable group={group} status={status} sort={sort}/></section><p className="mt-4 text-xs text-muted-foreground">حساب‌های افزوده‌شده تا پایان این نشست در پیش‌نمایش باقی می‌مانند.</p></>;}
-export function ContentPage(){const {contentFilter,setContentFilter}=useDemo();const [view,setView]=useState('grid');const [account,setAccount]=useState('all');const {accounts}=useDemo();return <><Heading title="پست‌ها و استوری‌ها" description="آخرین محتواهای حساب‌های تحت پایش، در یک نگاه"/><div className="filter-bar"><select className="select-control" aria-label="نوع محتوا" value={contentFilter} onChange={e=>setContentFilter(e.target.value)}><option value="all">همه انواع محتوا</option><option value="photo">پست تصویری</option><option value="reel">ریلز</option><option value="story">استوری</option><option value="video">ویدئو</option></select><select className="select-control" aria-label="حساب محتوا" value={account} onChange={e=>setAccount(e.target.value)}><option value="all">همه حساب‌ها</option>{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select><div className="segments mr-auto"><Button variant="ghost" title="نمای تصویری" aria-label="نمای تصویری" data-active={view==='grid'} onClick={()=>setView('grid')}><LayoutGrid/></Button><Button variant="ghost" title="نمای جدولی" aria-label="نمای جدولی" data-active={view==='table'} onClick={()=>setView('table')}><List/></Button></div></div><PostsGrid view={view} accountFilter={account}/></>;}
-export function AlertsPage(){const [type,setType]=useState('all');const [account,setAccount]=useState('all');const {accounts}=useDemo();return <><Heading title="هشدارها" description="رویدادهای مهم و تغییرات حساب‌های تحت پایش"/><div className="filter-bar"><select className="select-control" value={type} onChange={e=>setType(e.target.value)} aria-label="نوع هشدار"><option value="all">همه هشدارها</option><option value="warning">تغییرات غیرعادی</option><option value="info">محتوای جدید</option><option value="danger">خطاهای دریافت</option></select><select className="select-control" value={account} onChange={e=>setAccount(e.target.value)} aria-label="حساب هشدار"><option value="all">همه حساب‌ها</option>{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></div><section className="panel"><div className="panel-body"><AlertsList full type={type} accountId={account==='all'?undefined:account}/></div></section></>;}
-export function ReportsPage(){const {accounts}=useDemo();return <><Heading title="تحلیل و گزارش‌ها" description="مقایسه فعالیت، رشد و محتوای حساب‌های اینستاگرام" report/><div className="chart-grid"><GrowthChart/><ContentChart/></div><div className="settings-grid"><section className="panel"><div className="panel-header"><h2>فعال‌ترین حساب‌ها</h2><TrendingUp size={18} className="text-success"/></div><div className="panel-body">{[...accounts].sort((a,b)=>b.posts-a.posts).map(a=><div className="settings-row" key={a.id}><div className="account-cell"><Avatar account={a}/>{a.name}</div><strong>{fa(a.posts)} محتوا</strong></div>)}</div></section><section className="panel"><div className="panel-header"><h2>هشتگ‌های پرتکرار</h2></div><div className="panel-body">{['تهران','طبیعت','گردشگری','کافه','ایران'].map((t,i)=><div key={t} className="settings-row"><span>#{t}</span><span className="text-primary">{fa(48-i*7)} بار</span></div>)}</div></section></div><div className="mt-5 flex gap-3"><Button variant="outline" onClick={exportReport}><FileSpreadsheet/>خروجی CSV (سازگار با Excel)</Button><span className="demo-badge">گزارش شامل داده‌های نمایشی است</span></div></>;}
-export function SearchPage(){const {search,setSearch,contentFilter,setContentFilter}=useDemo();const [tab,setTab]=useState('content');return <><Heading title="جست‌وجو و فیلترها" description="جست‌وجو میان حساب‌ها، کپشن‌ها، هشتگ‌ها و کلمات کلیدی"/><div className="filter-bar"><Search size={20} className="text-primary"/><input className="field max-w-xl" aria-label="عبارت جست‌وجو" value={search} onChange={e=>setSearch(e.target.value)} placeholder="نام حساب، عبارت یا هشتگ موردنظر..."/><select className="select-control" value={contentFilter} onChange={e=>setContentFilter(e.target.value)} aria-label="فیلتر محتوای جست‌وجو"><option value="all">همه محتواها</option><option value="photo">عکس</option><option value="reel">ریلز</option><option value="story">استوری</option></select></div><div className="segments w-fit mb-5"><Button variant="ghost" data-active={tab==='content'} onClick={()=>setTab('content')}>محتواها</Button><Button variant="ghost" data-active={tab==='accounts'} onClick={()=>setTab('accounts')}>حساب‌ها</Button></div>{tab==='content'?<PostsGrid/>:<section className="panel"><AccountTable/></section>}</>;}
-export function SettingsPage(){const [keywords,setKeywords]=useState(['تهران','اقتصاد','خبر فوری']);const [keyword,setKeyword]=useState('');const [notification,setNotification]=useState(true);const [content,setContent]=useState(true);const [sensitivity,setSensitivity]=useState(15);const [schedule,setSchedule]=useState('15');const [saved,setSaved]=useState(false);return <><Heading title="تنظیمات" description="مدیریت پایش، کلمات کلیدی و اعلان‌های فضای کاری"/><div className="settings-grid"><section className="panel"><div className="panel-header"><h2>تنظیمات پایش</h2></div><div className="panel-body"><div className="settings-row"><div>فاصله بررسی حساب‌ها<small>زمان‌بندی نمایشی دریافت اطلاعات</small></div><select className="select-control" value={schedule} onChange={e=>setSchedule(e.target.value)} aria-label="فاصله پایش"><option value="5">هر ۵ دقیقه</option><option value="15">هر ۱۵ دقیقه</option><option value="60">هر ساعت</option></select></div><div className="settings-row"><div>حساسیت تغییر دنبال‌کنندگان<small>حد هشدار: {fa(sensitivity)} درصد</small></div><input type="range" min="5" max="50" value={sensitivity} onChange={e=>setSensitivity(Number(e.target.value))} aria-label="حساسیت هشدار" className="w-28 accent-primary"/></div><div className="settings-row"><div>اعلان محتوای جدید<small>پست‌ها و استوری‌های تازه</small></div><Switch checked={content} onCheckedChange={setContent} aria-label="اعلان محتوای جدید"/></div><div className="settings-row"><div>اعلان‌های درون سامانه</div><Switch checked={notification} onCheckedChange={setNotification} aria-label="اعلان درون سامانه"/></div></div></section><section className="panel"><div className="panel-header"><h2>کلمات کلیدی تحت پایش</h2></div><div className="panel-body"><form className="flex gap-2 mt-4 mb-5" onSubmit={e=>{e.preventDefault();if(keyword.trim()&&!keywords.includes(keyword.trim()))setKeywords([...keywords,keyword.trim()]);setKeyword('');}}><input className="field" value={keyword} onChange={e=>setKeyword(e.target.value)} aria-label="کلمه کلیدی جدید" placeholder="افزودن کلمه یا عبارت جدید..."/><Button type="submit" size="icon" aria-label="افزودن کلمه کلیدی"><Plus/></Button></form>{keywords.map(k=><span className="keyword" key={k}>{k}<Button variant="ghost" size="icon" className="w-5 h-5" title={'حذف '+k} onClick={()=>setKeywords(keywords.filter(x=>x!==k))}><Trash2 size={12}/></Button></span>)}<div className="settings-row mt-4"><div>حساب اینستاگرام<small>هیچ اتصال واقعی برقرار نشده است</small></div><span className="demo-badge">نسخه نمایشی</span></div></div></section></div><Button className="mt-5" onClick={()=>setSaved(true)}><Check/>{saved?'تنظیمات پیش‌نمایش ذخیره شد':'ذخیره تنظیمات'}</Button><p className="mt-3 text-xs text-muted-foreground">این تنظیمات فقط در نشست جاری پیش‌نمایش اعمال می‌شوند؛ مدیریت کاربران پس از اتصال واقعی فعال می‌شود.</p></>;}
-export function AccountDetail({id}:{id:string}){const {accounts,setAccounts}=useDemo();const navigate=useNavigate();const a=accounts.find(x=>x.id===id);const [confirm,setConfirm]=useState(false);if(!a)return <div className="empty">حساب موردنظر یافت نشد.<Button asChild variant="link"><Link to="/accounts">بازگشت به حساب‌ها</Link></Button></div>;return <><Heading title={a.name} description={'@'+a.user+' · '+a.group+' · داده‌های نمایشی'}/><div className="filter-bar"><Avatar account={a}/><strong>{fa(a.followers)} دنبال‌کننده</strong><span className="positive mr-5">{fa(a.growth)}٪ رشد</span><Button variant="outline" onClick={()=>setAccounts(prev=>prev.map(x=>x.id===id?{...x,status:x.status==='active'?'paused':'active'}:x))}>{a.status==='active'?'توقف پایش':'فعال کردن پایش'}</Button><Button variant="destructive" className="mr-auto" onClick={()=>setConfirm(true)}><Trash2/>حذف حساب</Button></div><div className="chart-grid"><GrowthChart/><section className="panel"><div className="panel-header"><h2>هشدارهای حساب</h2></div><div className="panel-body"><AlertsList accountId={id}/></div></section></div><section className="panel"><div className="panel-header"><h2>آخرین محتوای حساب</h2><span className="text-muted-foreground text-xs">آخرین دریافت نمونه: ۱۲ دقیقه پیش</span></div><div className="panel-body"><PostsGrid accountId={id}/></div></section>{confirm&&<div className="modal-overlay"><div className="modal"><h2>حذف {a.name}؟</h2><p className="mt-3 text-muted-foreground">این حساب از فضای کاری نمایشی حذف می‌شود.</p><div className="modal-actions"><Button variant="outline" onClick={()=>setConfirm(false)}>انصراف</Button><Button variant="destructive" onClick={()=>{setAccounts(prev=>prev.filter(x=>x.id!==id));navigate({to:'/accounts'});}}>حذف حساب</Button></div></div></div>}</>;}
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import {
+  Plus,
+  Download,
+  CalendarDays,
+  RefreshCw,
+  ChevronLeft,
+  SlidersHorizontal,
+  LayoutGrid,
+  List,
+  Search,
+  Check,
+  Trash2,
+  FileSpreadsheet,
+  TrendingUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useDemo } from "./store";
+import { fa, posts } from "./data";
+import {
+  Stats,
+  GrowthChart,
+  ContentChart,
+  AccountTable,
+  PostsGrid,
+  AlertsList,
+  Avatar,
+} from "./widgets";
+function exportReport() {
+  const lines = [
+    ["داده‌های نمایشی - گزارش دیدبان"],
+    ["حساب", "نوع محتوا", "کپشن", "لایک", "دیدگاه"],
+    ...posts.map((p) => [p.account, p.label, p.caption, p.likes, p.comments]),
+  ];
+  const csv =
+    "\uFEFF" +
+    lines
+      .map((r) => r.map((x) => '"' + String(x).replaceAll('"', '""') + '"').join(","))
+      .join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "didban-demo-report.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+function Heading({
+  title,
+  description,
+  add = false,
+  report = false,
+}: {
+  title: string;
+  description: string;
+  add?: boolean;
+  report?: boolean;
+}) {
+  const { setAddOpen } = useDemo();
+  return (
+    <div className="page-heading">
+      <div>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+      <div className="heading-actions">
+        {report && (
+          <Button variant="outline" onClick={exportReport}>
+            <Download />
+            دریافت گزارش
+          </Button>
+        )}
+        {add && (
+          <Button onClick={() => setAddOpen(true)}>
+            <Plus />
+            افزودن حساب جدید
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+function QuickFilters({
+  group,
+  setGroup,
+  period,
+  setPeriod,
+}: {
+  group: string;
+  setGroup: (v: string) => void;
+  period: string;
+  setPeriod: (v: string) => void;
+}) {
+  const [refresh, setRefresh] = useState(false);
+  return (
+    <div className="filter-bar">
+      <SlidersHorizontal size={16} className="text-muted-foreground" />
+      <span className="text-xs text-muted-foreground">فیلتر سریع:</span>
+      <select
+        className="select-control"
+        aria-label="گروه حساب‌ها"
+        value={group}
+        onChange={(e) => setGroup(e.target.value)}
+      >
+        <option value="all">همه حساب‌ها</option>
+        <option>خبری</option>
+        <option>فرهنگی</option>
+        <option>اقتصادی</option>
+      </select>
+      <select
+        className="select-control"
+        aria-label="بازه زمانی"
+        value={period}
+        onChange={(e) => setPeriod(e.target.value)}
+      >
+        <option value="week">۷ روز گذشته</option>
+        <option value="day">۲۴ ساعت گذشته</option>
+        <option value="month">۳۰ روز گذشته</option>
+      </select>
+      <span className="update">
+        <span className="status-dot" />
+        {refresh ? "پیش‌نمایش به‌روز شد" : "آخرین به‌روزرسانی نمونه: ۲ دقیقه پیش"}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          title="به‌روزرسانی پیش‌نمایش"
+          onClick={() => setRefresh(true)}
+        >
+          <RefreshCw size={12} />
+        </Button>
+      </span>
+    </div>
+  );
+}
+export function Overview() {
+  const { accounts } = useDemo();
+  const [group, setGroup] = useState("all");
+  const [period, setPeriod] = useState("week");
+  return (
+    <>
+      <Heading
+        title="نمای کلی"
+        description="نمایی یکپارچه از فعالیت حساب‌های اینستاگرام شما"
+        add
+        report
+      />
+      <QuickFilters group={group} setGroup={setGroup} period={period} setPeriod={setPeriod} />
+      <Stats />
+      <div className="chart-grid">
+        <GrowthChart selectedPeriod={period} />
+        <ContentChart />
+      </div>
+      <section className="panel">
+        <div className="panel-header">
+          <div className="flex items-center gap-2">
+            <h2>حساب‌های تحت پایش</h2>
+            <span className="text-[10px] text-muted-foreground">
+              {fa(accounts.length)} حساب نمونه
+            </span>
+          </div>
+          <Button variant="link" size="sm" asChild>
+            <Link to="/accounts">
+              مشاهده همه حساب‌ها
+              <ChevronLeft />
+            </Link>
+          </Button>
+        </div>
+        <AccountTable limit={5} group={group} />
+      </section>
+      <div className="bottom-grid">
+        <section className="panel">
+          <div className="panel-header">
+            <h2>آخرین پست‌ها و استوری‌ها</h2>
+            <Button variant="link" size="sm" asChild>
+              <Link to="/content">
+                مشاهده همه
+                <ChevronLeft />
+              </Link>
+            </Button>
+          </div>
+          <div className="panel-body">
+            <PostsGrid />
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-header">
+            <h2>هشدارهای اخیر</h2>
+            <Button variant="link" size="sm" asChild>
+              <Link to="/alerts">
+                مشاهده همه
+                <ChevronLeft />
+              </Link>
+            </Button>
+          </div>
+          <div className="panel-body">
+            <AlertsList />
+          </div>
+        </section>
+      </div>
+    </>
+  );
+}
+export function AccountsPage() {
+  const { search, setSearch, accounts } = useDemo();
+  const [group, setGroup] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState("followers");
+  return (
+    <>
+      <Heading
+        title="حساب‌های تحت پایش"
+        description={`${fa(accounts.length)} حساب در فضای کاری نمایشی شما`}
+        add
+      />
+      <div className="filter-bar">
+        <input
+          className="field max-w-72"
+          placeholder="جست‌وجوی نام حساب..."
+          aria-label="جست‌وجوی حساب"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="select-control"
+          aria-label="فیلتر گروه"
+          value={group}
+          onChange={(e) => setGroup(e.target.value)}
+        >
+          <option value="all">همه گروه‌ها</option>
+          {["خبری", "فرهنگی", "اقتصادی", "گردشگری", "سایر"].map((g) => (
+            <option key={g}>{g}</option>
+          ))}
+        </select>
+        <select
+          className="select-control"
+          aria-label="فیلتر وضعیت"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="all">همه وضعیت‌ها</option>
+          <option value="active">فعال</option>
+          <option value="paused">متوقف</option>
+          <option value="error">خطای دریافت</option>
+        </select>
+        <select
+          className="select-control"
+          aria-label="مرتب‌سازی"
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+        >
+          <option value="followers">بیشترین دنبال‌کننده</option>
+          <option value="growth">بیشترین رشد</option>
+          <option value="activity">بیشترین فعالیت</option>
+        </select>
+      </div>
+      <section className="panel">
+        <AccountTable group={group} status={status} sort={sort} />
+      </section>
+      <p className="mt-4 text-xs text-muted-foreground">
+        حساب‌های افزوده‌شده تا پایان این نشست در پیش‌نمایش باقی می‌مانند.
+      </p>
+    </>
+  );
+}
+export function ContentPage() {
+  const { contentFilter, setContentFilter } = useDemo();
+  const [view, setView] = useState("grid");
+  const [account, setAccount] = useState("all");
+  const { accounts } = useDemo();
+  return (
+    <>
+      <Heading
+        title="پست‌ها و استوری‌ها"
+        description="آخرین محتواهای حساب‌های تحت پایش، در یک نگاه"
+      />
+      <div className="filter-bar">
+        <select
+          className="select-control"
+          aria-label="نوع محتوا"
+          value={contentFilter}
+          onChange={(e) => setContentFilter(e.target.value)}
+        >
+          <option value="all">همه انواع محتوا</option>
+          <option value="photo">پست تصویری</option>
+          <option value="reel">ریلز</option>
+          <option value="story">استوری</option>
+          <option value="video">ویدئو</option>
+        </select>
+        <select
+          className="select-control"
+          aria-label="حساب محتوا"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+        >
+          <option value="all">همه حساب‌ها</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+        <div className="segments mr-auto">
+          <Button
+            variant="ghost"
+            title="نمای تصویری"
+            aria-label="نمای تصویری"
+            data-active={view === "grid"}
+            onClick={() => setView("grid")}
+          >
+            <LayoutGrid />
+          </Button>
+          <Button
+            variant="ghost"
+            title="نمای جدولی"
+            aria-label="نمای جدولی"
+            data-active={view === "table"}
+            onClick={() => setView("table")}
+          >
+            <List />
+          </Button>
+        </div>
+      </div>
+      <PostsGrid view={view} accountFilter={account} />
+    </>
+  );
+}
+export function AlertsPage() {
+  const [type, setType] = useState("all");
+  const [account, setAccount] = useState("all");
+  const { accounts } = useDemo();
+  return (
+    <>
+      <Heading title="هشدارها" description="رویدادهای مهم و تغییرات حساب‌های تحت پایش" />
+      <div className="filter-bar">
+        <select
+          className="select-control"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          aria-label="نوع هشدار"
+        >
+          <option value="all">همه هشدارها</option>
+          <option value="warning">تغییرات غیرعادی</option>
+          <option value="info">محتوای جدید</option>
+          <option value="danger">خطاهای دریافت</option>
+        </select>
+        <select
+          className="select-control"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          aria-label="حساب هشدار"
+        >
+          <option value="all">همه حساب‌ها</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <section className="panel">
+        <div className="panel-body">
+          <AlertsList full type={type} accountId={account === "all" ? undefined : account} />
+        </div>
+      </section>
+    </>
+  );
+}
+export function ReportsPage() {
+  const { accounts } = useDemo();
+  return (
+    <>
+      <Heading
+        title="تحلیل و گزارش‌ها"
+        description="مقایسه فعالیت، رشد و محتوای حساب‌های اینستاگرام"
+        report
+      />
+      <div className="chart-grid">
+        <GrowthChart />
+        <ContentChart />
+      </div>
+      <div className="settings-grid">
+        <section className="panel">
+          <div className="panel-header">
+            <h2>فعال‌ترین حساب‌ها</h2>
+            <TrendingUp size={18} className="text-success" />
+          </div>
+          <div className="panel-body">
+            {[...accounts]
+              .sort((a, b) => b.posts - a.posts)
+              .map((a) => (
+                <div className="settings-row" key={a.id}>
+                  <div className="account-cell">
+                    <Avatar account={a} />
+                    {a.name}
+                  </div>
+                  <strong>{fa(a.posts)} محتوا</strong>
+                </div>
+              ))}
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-header">
+            <h2>هشتگ‌های پرتکرار</h2>
+          </div>
+          <div className="panel-body">
+            {["تهران", "طبیعت", "گردشگری", "کافه", "ایران"].map((t, i) => (
+              <div key={t} className="settings-row">
+                <span>#{t}</span>
+                <span className="text-primary">{fa(48 - i * 7)} بار</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+      <div className="mt-5 flex gap-3">
+        <Button variant="outline" onClick={exportReport}>
+          <FileSpreadsheet />
+          خروجی CSV (سازگار با Excel)
+        </Button>
+        <span className="demo-badge">گزارش شامل داده‌های نمایشی است</span>
+      </div>
+    </>
+  );
+}
+export function SearchPage() {
+  const { search, setSearch, contentFilter, setContentFilter } = useDemo();
+  const [tab, setTab] = useState("content");
+  return (
+    <>
+      <Heading
+        title="جست‌وجو و فیلترها"
+        description="جست‌وجو میان حساب‌ها، کپشن‌ها، هشتگ‌ها و کلمات کلیدی"
+      />
+      <div className="filter-bar">
+        <Search size={20} className="text-primary" />
+        <input
+          className="field max-w-xl"
+          aria-label="عبارت جست‌وجو"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="نام حساب، عبارت یا هشتگ موردنظر..."
+        />
+        <select
+          className="select-control"
+          value={contentFilter}
+          onChange={(e) => setContentFilter(e.target.value)}
+          aria-label="فیلتر محتوای جست‌وجو"
+        >
+          <option value="all">همه محتواها</option>
+          <option value="photo">عکس</option>
+          <option value="reel">ریلز</option>
+          <option value="story">استوری</option>
+        </select>
+      </div>
+      <div className="segments w-fit mb-5">
+        <Button variant="ghost" data-active={tab === "content"} onClick={() => setTab("content")}>
+          محتواها
+        </Button>
+        <Button variant="ghost" data-active={tab === "accounts"} onClick={() => setTab("accounts")}>
+          حساب‌ها
+        </Button>
+      </div>
+      {tab === "content" ? (
+        <PostsGrid />
+      ) : (
+        <section className="panel">
+          <AccountTable />
+        </section>
+      )}
+    </>
+  );
+}
+export function SettingsPage() {
+  const [keywords, setKeywords] = useState(["تهران", "اقتصاد", "خبر فوری"]);
+  const [keyword, setKeyword] = useState("");
+  const [notification, setNotification] = useState(true);
+  const [content, setContent] = useState(true);
+  const [sensitivity, setSensitivity] = useState(15);
+  const [schedule, setSchedule] = useState("15");
+  const [saved, setSaved] = useState(false);
+  return (
+    <>
+      <Heading title="تنظیمات" description="مدیریت پایش، کلمات کلیدی و اعلان‌های فضای کاری" />
+      <div className="settings-grid">
+        <section className="panel">
+          <div className="panel-header">
+            <h2>تنظیمات پایش</h2>
+          </div>
+          <div className="panel-body">
+            <div className="settings-row">
+              <div>
+                فاصله بررسی حساب‌ها<small>زمان‌بندی نمایشی دریافت اطلاعات</small>
+              </div>
+              <select
+                className="select-control"
+                value={schedule}
+                onChange={(e) => setSchedule(e.target.value)}
+                aria-label="فاصله پایش"
+              >
+                <option value="5">هر ۵ دقیقه</option>
+                <option value="15">هر ۱۵ دقیقه</option>
+                <option value="60">هر ساعت</option>
+              </select>
+            </div>
+            <div className="settings-row">
+              <div>
+                حساسیت تغییر دنبال‌کنندگان<small>حد هشدار: {fa(sensitivity)} درصد</small>
+              </div>
+              <input
+                type="range"
+                min="5"
+                max="50"
+                value={sensitivity}
+                onChange={(e) => setSensitivity(Number(e.target.value))}
+                aria-label="حساسیت هشدار"
+                className="w-28 accent-primary"
+              />
+            </div>
+            <div className="settings-row">
+              <div>
+                اعلان محتوای جدید<small>پست‌ها و استوری‌های تازه</small>
+              </div>
+              <Switch
+                checked={content}
+                onCheckedChange={setContent}
+                aria-label="اعلان محتوای جدید"
+              />
+            </div>
+            <div className="settings-row">
+              <div>اعلان‌های درون سامانه</div>
+              <Switch
+                checked={notification}
+                onCheckedChange={setNotification}
+                aria-label="اعلان درون سامانه"
+              />
+            </div>
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-header">
+            <h2>کلمات کلیدی تحت پایش</h2>
+          </div>
+          <div className="panel-body">
+            <form
+              className="flex gap-2 mt-4 mb-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (keyword.trim() && !keywords.includes(keyword.trim()))
+                  setKeywords([...keywords, keyword.trim()]);
+                setKeyword("");
+              }}
+            >
+              <input
+                className="field"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                aria-label="کلمه کلیدی جدید"
+                placeholder="افزودن کلمه یا عبارت جدید..."
+              />
+              <Button type="submit" size="icon" aria-label="افزودن کلمه کلیدی">
+                <Plus />
+              </Button>
+            </form>
+            {keywords.map((k) => (
+              <span className="keyword" key={k}>
+                {k}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-5 h-5"
+                  title={"حذف " + k}
+                  onClick={() => setKeywords(keywords.filter((x) => x !== k))}
+                >
+                  <Trash2 size={12} />
+                </Button>
+              </span>
+            ))}
+            <div className="settings-row mt-4">
+              <div>
+                حساب اینستاگرام<small>هیچ اتصال واقعی برقرار نشده است</small>
+              </div>
+              <span className="demo-badge">نسخه نمایشی</span>
+            </div>
+          </div>
+        </section>
+      </div>
+      <Button className="mt-5" onClick={() => setSaved(true)}>
+        <Check />
+        {saved ? "تنظیمات پیش‌نمایش ذخیره شد" : "ذخیره تنظیمات"}
+      </Button>
+      <p className="mt-3 text-xs text-muted-foreground">
+        این تنظیمات فقط در نشست جاری پیش‌نمایش اعمال می‌شوند؛ مدیریت کاربران پس از اتصال واقعی فعال
+        می‌شود.
+      </p>
+    </>
+  );
+}
+export function AccountDetail({ id }: { id: string }) {
+  const { accounts, setAccounts } = useDemo();
+  const navigate = useNavigate();
+  const a = accounts.find((x) => x.id === id);
+  const [confirm, setConfirm] = useState(false);
+  if (!a)
+    return (
+      <div className="empty">
+        حساب موردنظر یافت نشد.
+        <Button asChild variant="link">
+          <Link to="/accounts">بازگشت به حساب‌ها</Link>
+        </Button>
+      </div>
+    );
+  return (
+    <>
+      <Heading title={a.name} description={"@" + a.user + " · " + a.group + " · داده‌های نمایشی"} />
+      <div className="filter-bar">
+        <Avatar account={a} />
+        <strong>{fa(a.followers)} دنبال‌کننده</strong>
+        <span className="positive mr-5">{fa(a.growth)}٪ رشد</span>
+        <Button
+          variant="outline"
+          onClick={() =>
+            setAccounts((prev) =>
+              prev.map((x) =>
+                x.id === id ? { ...x, status: x.status === "active" ? "paused" : "active" } : x,
+              ),
+            )
+          }
+        >
+          {a.status === "active" ? "توقف پایش" : "فعال کردن پایش"}
+        </Button>
+        <Button variant="destructive" className="mr-auto" onClick={() => setConfirm(true)}>
+          <Trash2 />
+          حذف حساب
+        </Button>
+      </div>
+      <div className="chart-grid">
+        <GrowthChart />
+        <section className="panel">
+          <div className="panel-header">
+            <h2>هشدارهای حساب</h2>
+          </div>
+          <div className="panel-body">
+            <AlertsList accountId={id} />
+          </div>
+        </section>
+      </div>
+      <section className="panel">
+        <div className="panel-header">
+          <h2>آخرین محتوای حساب</h2>
+          <span className="text-muted-foreground text-xs">آخرین دریافت نمونه: ۱۲ دقیقه پیش</span>
+        </div>
+        <div className="panel-body">
+          <PostsGrid accountId={id} />
+        </div>
+      </section>
+      {confirm && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>حذف {a.name}؟</h2>
+            <p className="mt-3 text-muted-foreground">این حساب از فضای کاری نمایشی حذف می‌شود.</p>
+            <div className="modal-actions">
+              <Button variant="outline" onClick={() => setConfirm(false)}>
+                انصراف
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setAccounts((prev) => prev.filter((x) => x.id !== id));
+                  navigate({ to: "/accounts" });
+                }}
+              >
+                حذف حساب
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
